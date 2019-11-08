@@ -1,0 +1,66 @@
+node{
+ 
+ stage 'Prepare env'
+ Properties properties = readPropertyFile("/share/root/legacyautomation/esgstatus.properties")
+ println('Done read propertifile......') 
+ def available_esg = getESG_WithStatus(properties, "ready")
+ //def canrun_esg=getESGwithcasefile(properties,available_esg)
+//  def availablecasefile = getCasefile(available_esg)
+//  def jobname_list = []
+ for(esg in available_esg){
+	
+    def esgname= esg.substring(0, esg.indexOf('_status'))
+    def caseFileName = properties.getProperty(esgname + '_xml')
+	println('casefilename is : ' + caseFileName) 
+	def jobName='LegacyAutomation_run'
+    stage 'Trigger related jobs'
+	if (caseFileName.contains(".xml"))
+    {	
+	    build job: jobName, wait: false, parameters: [[$class: 'StringParameterValue', name: 'xmlfile', value: "${caseFileName}"],
+	    [$class: 'StringParameterValue', name: 'ApplianceInterfaceESGIP', value: "${esgname}"]]
+	    sleep 30
+	}
+ }
+
+}
+
+def readPropertyFile(filePath){
+	
+	Properties properties = new Properties()
+	File propertiesFile = new File(filePath)
+	properties.load(propertiesFile.newDataInputStream())
+
+	return properties
+}
+
+def getESG_WithStatus(Properties properties, status){	
+	
+	def list = []
+	
+	
+	for (key in properties.keys()) {
+		if (key.toString().contains("_status") && properties.get(key).contains(status))		
+		{
+			list.add(key.toString())
+		}
+	}
+    for (int i = 0; i < list.size(); i++){
+        
+        println('esglist name is: ' + list[i])
+        
+    }
+ 
+	return list
+}
+
+def getCasefile(available_esg){
+    def esglist=[]
+    for(esg in available_esg){
+	     println('esg =: ' + esg)
+        esglist.add(esg.toString().split('_')[0])
+        
+        println('esg name is: ' + esg.toString().split('_')[0])
+
+        }
+	return esglist
+ }
